@@ -1,0 +1,483 @@
+import java.util.*;
+public class Driver{
+    public static void main(String args[]){
+        boolean play = true;
+        int asdf = 0;
+        
+        //Create objects
+        Hero steve = new Hero();
+        Farmer farmer = new Farmer();
+        
+        //Generate the map
+        Object[][] map = new Object[10][10];
+        
+        //Fill the map with objects
+        map[steve.getX()][steve.getY()] = steve;
+        
+        Scanner kbReader = new Scanner(System.in);
+        
+        Monster[] monsterlist = new Monster[6];
+        for (int i =  0; i < monsterlist.length; i++){
+            Monster mangster= new Monster((int)(Math.random() * 10), (int)(Math.random() * 10), (int)(Math.random() * 10));
+            monsterlist[i] = mangster;
+        }
+        
+        Potion[] potionlist = new Potion[2];
+        for (int i =  0; i < potionlist.length; i++){
+            Potion potion = new Potion();
+            potionlist[i] = potion;
+        }
+        
+        printMap(map, monsterlist, potionlist, steve, farmer);
+        checkXY(map, monsterlist, steve, potionlist, farmer);
+        
+        System.out.println("** Hero & Monsters **\n\n* The map has been generated *\n* The enemies have been placed *\n* The items have been placed *");
+        
+        System.out.println("Hero begins his journey in the Southwest corner of Yore.");
+        printMap(map, monsterlist, potionlist, steve, farmer);
+        while(play){
+            if(steve.getHealth() < 0){
+                System.out.println("* Hero has died. *");
+                play = false;
+                break;
+            }
+            if (monsterlist[0].monsterDead() && monsterlist[1].monsterDead() && monsterlist[2].monsterDead() && monsterlist[3].monsterDead()){
+                System.out.println("* Hero has defeated all monsters *");
+                play = false;
+                break;
+            }
+            System.out.println("Enter direction (north, south, east, west): ");
+            String o = kbReader.nextLine();
+            while(!checkMove(o, steve)){
+                o = kbReader.nextLine();
+            }
+            
+            printMap(map, monsterlist, potionlist, steve, farmer);
+            
+            for(int i = 0; i < monsterlist.length; i++){
+                if ((steve.getX() == monsterlist[i].getX()) && (steve.getY() == monsterlist[i].getY())){
+                    if (monsterlist[i].getHealth() < 0){
+                        break;
+                    }
+                    else{
+                        System.out.println("Hero encounters a monster! The monster engages!");
+                        System.out.println(monsterlist[i].toString());
+                        while(fight(monsterlist[i], steve)){
+                        }
+                        if(steve.getHealth() <= 0){
+                            System.out.println("* Hero has died. *");
+                            play = false;
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            for(int i = 0; i < potionlist.length; i++){
+                if ((steve.getX() == potionlist[i].getX()) && (steve.getY() == potionlist[i].getY())){
+                    potion(steve, potionlist[i]);
+                    System.out.println("Hero drinks potion.\nHero's health: " + steve.getHealth());
+                }
+            }
+            
+            if((steve.getX() == farmer.getX()) && (steve.getY() == farmer.getY())){
+                steve.metFarmer(true);
+                for(int i = 0; i < monsterlist.length; i++){
+                    if (monsterlist[i].monsterDead()){
+                        asdf += 1;
+                    }
+                }
+                if (asdf >= 2){
+                    steve.upgrade();
+                    System.out.println(farmer.armor(steve));
+                    steve.metFarmer(true);
+                }
+                else{
+                    System.out.println("I am the farmer. Please kill 2 monsters and come back.");
+                }
+            }
+        }
+    }
+    public static void checkXY(Object[][] map, Monster[] monsterlist, Hero steve, Potion[] potionlist, Farmer farmer){
+        for (int i = 0; i < monsterlist.length; i++){
+            while((monsterlist[i].getX() == steve.getX()) && (monsterlist[i].getY() == steve.getY())){
+                Monster mangster= new Monster((int)(Math.random() * 10), (int)(Math.random() * 10), (int)(Math.random() * 10));
+                monsterlist[i] = mangster;
+            }
+        }
+        
+        for (int i = 0; i < potionlist.length; i++){
+            for (int j = 0; j < monsterlist.length; j++){
+                while((potionlist[i].getX() == monsterlist[j].getX()) && (potionlist[i].getY() == monsterlist[j].getY()) && (potionlist[i].getX() == steve.getX()) && (potionlist[i].getY() == steve.getY())){
+                    Potion potion = new Potion();
+                    potionlist[i] = potion;
+                }
+            }
+        }
+        while (isDot(map, farmer)){
+            farmer.setY((int)(Math.random() * 10));
+            farmer.setX((int)(Math.random() * 10));
+            System.out.println("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+        }
+    }
+    public static boolean isDot(Object[][] map, Farmer farmer){
+        if (map[farmer.getY()][farmer.getX()] == ".\t"){
+            return false;
+        }
+        else{
+            return true;
+        }
+    }
+    public static void printMap(Object[][] map, Monster[] monsterlist, Potion[] potionlist, Hero steve, Farmer farmer){
+        for(int i = 0; i < map.length; i++){
+            for(int j = 0; j < map[i].length; j++){
+                map[i][j] = ".\t";
+                for(int k = 0; k < monsterlist.length; k++){
+                    int x = monsterlist[k].getX();
+                    int y = monsterlist[k].getY();
+                    map[y][x] = ".\t";
+                    if (monsterlist[k].monsterDead()){
+                        map[y][x] = "m\t";
+                    }
+                }
+                for(int l = 0; l < potionlist.length; l++){
+                    int x = potionlist[l].getX();
+                    int y = potionlist[l].getY();
+                    map[y][x] = ".\t";
+                    if (potionlist[l].usedPotion()){
+                        map[y][x] = "p\t";
+                    }
+                }
+                for(int m = 0; m < 1; m++){
+                    int x = steve.getX();
+                    int y = steve.getY();
+                    map[y][x] = "s\t";
+                }
+                for(int n = 0; n < 1; n++){
+                    int x = farmer.getX();
+                    int y = farmer.getY();
+                    map[y][x] = ".\t";
+                    if (steve.getFarmer()){
+                        map[y][x] = "f\t";
+                    }
+                }
+                System.out.print(map[i][j]);
+            }
+            System.out.println("");
+        }
+    }
+    public static boolean checkMove(String o, Hero steve){
+        if(o.equalsIgnoreCase("north")){
+            if (steve.getY() == 0){
+                System.out.println("You cannot go further north.");
+                return false;
+            }
+            steve.setY(-1);
+            return true;
+        }
+        else if(o.equalsIgnoreCase("west")){
+            if (steve.getX() == 0){
+                System.out.println("You cannot go further west.");
+                return false;
+            }
+            steve.setX(-1);
+            return true;
+        }
+        else if(o.equalsIgnoreCase("south")){
+            if (steve.getY() == 9){
+                System.out.println("You cannot go further south.");
+                return false;
+            }
+            steve.setY(1);
+            return true;
+        }
+        else if(o.equalsIgnoreCase("east")){
+            if (steve.getX() == 9){
+                System.out.println("You cannot go further east.");
+                return false;
+            }
+            steve.setX(1);
+            return true;
+        }
+        else{
+            System.out.println("Please re-enter direction:");
+            return false;
+        }
+    }
+    public static boolean fight(Monster monster, Hero steve){
+        Scanner kbReader = new Scanner(System.in);
+        System.out.println("Enter an action (run, attack): ");
+        String o = kbReader.nextLine();
+        if(o.equalsIgnoreCase("run")){
+            if (monster.getSpeed() == 0){
+                int a = (int)(Math.random() * 4);
+                if (a < 4){
+                    System.out.println("Hero successfully runs away.");
+                    return false;
+                }
+                else{
+                    System.out.println("Hero tries to run! The monster is too fast!\nThe monster attacks! Hero's health goes down to " + steve.decreaseHealth(monster.getAttack()) + "/100");
+                    return true;
+                }
+            }
+            else if(monster.getSpeed() == 1){
+                int a = (int)(Math.random() * 4);
+                if (a < 2){
+                    System.out.println("Hero successfully runs away.");
+                    return false;
+                }
+                else{
+                    System.out.println("Hero tries to run! The monster is too fast!\nThe monster attacks! Hero's health goes down to " + steve.decreaseHealth(monster.getAttack()) + "/100");
+                    return true;
+                }
+            }
+            else if(monster.getSpeed() == 2){
+                int a = (int)(Math.random() * 4);
+                if (a < 1){
+                    System.out.println("Hero successfully runs away.");
+                    return false;
+                }
+                else{
+                    System.out.println("Hero tries to run! The monster is too fast!\nThe monster attacks! Hero's health goes down to " + steve.decreaseHealth(monster.getAttack()) + "/100");
+                    return true;
+                }
+            }
+            else if(monster.getSpeed() == 3){
+                int a = (int)(Math.random() * 4);
+                if (a < 0){
+                    System.out.println("Hero successfully runs away.");
+                    return false;
+                }
+                else{
+                    System.out.println("Hero tries to run! The monster is too fast!\nThe monster attacks! Hero's health goes down to " + steve.decreaseHealth(monster.getAttack()) + "/100");
+                    return true;
+                }
+            }
+        }
+        else if(o.equalsIgnoreCase("attack")){
+            System.out.println("The hero attacks! Monster's health goes down to " + monster.decreaseHealth(steve.getAttack()) + "/100");
+            if(monster.getHealth() < 0){
+                System.out.println("Monster dies.");
+                return false;
+            }
+            if(steve.getFarmer() == true){
+                System.out.println("The monster attacks! Hero's health goes down to " + steve.decreaseHealth((monster.getAttack()*2)/3) + "/100");
+                if(steve.getHealth() <= 0){
+                    System.out.println("* Hero has died. *");
+                    return false;
+                }
+                return true;
+            }
+            System.out.println("The monster attacks! Hero's health goes down to " + steve.decreaseHealth(monster.getAttack()) + "/100");
+            if(steve.getHealth() <= 0){
+                System.out.println("* Hero has died. *");
+                return false;
+            }
+            return true;
+        }
+        System.out.println("Please re-enter choice.");
+        return true;
+    }
+    public static void potion(Hero steve, Potion potion){
+        potion.usePotion();
+        steve.increaseHealth();
+    }
+}
+
+public class Sword{
+    public Weapon(String name, int min, int max){
+        
+    }
+}
+
+public class Farmer{
+    private int x;
+    private int y;
+    public Farmer(){
+        x = (int)(Math.random() * 10);
+        y = (int)(Math.random() * 10);
+    }
+    public String armor(Hero hero){
+        String s = "Hello Steve. Take my armor and sword.\nHero's attack is now "+ hero.getAttack() + ". Armor reduces attack by 33%";
+        return s;
+    }
+    public int getX(){
+        return x;
+    }
+    public int getY(){
+        return y;
+    }public int setX(int x1){
+        x = x1;
+        return x;
+    }
+    public int setY(int y1){
+        y = y1;
+        return y;
+    }
+}
+
+public class Potion{
+    private int x;
+    private int y;
+    private int full;
+    public Potion(){
+        x = (int)(Math.random() * 10);
+        y = (int)(Math.random() * 10);
+        full = 1;
+    }
+    public int getX(){
+        return x;
+    }
+    public int getY(){
+        return y;
+    }
+    public int usePotion(){
+        full = 0;
+        return full;
+    }
+    public boolean usedPotion(){
+        if(full == 0){
+            return true;
+        }
+        else{
+            return false;
+        }
+    }
+}
+
+public class Armor{
+    private int x;
+    private int y;
+    private int reduce;
+    public Armor(int reduce){
+        x = (int)(Math.random() * 10);
+        y = (int)(Math.random() * 10);
+        this.reduce = reduce;
+    }
+}
+
+public class Monster{
+    private int x;
+    private int y;
+    private int health;
+    private int attack;
+    private int speed;
+    
+    public Monster(int health, int attack, int speed){
+        x = (int)(Math.random() * 10);
+        y = (int)(Math.random() * 10);
+        this.health = (int)(Math.random() * 100);
+        this.attack = (int)(Math.random() * 30);
+        this.speed = (int)(Math.random() * 3);
+    }
+    public int getX(){
+        return x;
+    }
+    public int getY(){
+        return y;
+    }
+    public int getSpeed(){
+        return speed;
+    }
+    public int getAttack(){
+        return attack;
+    }
+    public int setAttack(int attack){
+        attack = attack/3;
+        return attack;
+    }
+    public int decreaseHealth(int attack){
+        health -= attack;
+        return health;
+    }
+    public int getHealth(){
+        return health;
+    }
+    public boolean monsterDead(){
+        if(health < 0){
+            return true;
+        }
+        else{
+            return false;
+        }
+    }
+    public String toString(){
+        String x = "Monster health: " + health + "\nMonster attack: " + attack + "\nMonster speed: " + speed;
+        return x;
+    }
+}
+
+public class Hero{
+    private int x;
+    private int y;
+    private int health;
+    private Weapon weapon;
+    private int attack;
+    private boolean farmer;
+    public Hero(){
+        x = 0;
+        y = 9;
+        health = 100;
+        attack = 20;
+    }
+    public int getX(){
+        return x;
+    }
+    public int getY(){
+        return y;
+    }
+    public int setY(int m){
+        y += m;
+        return y;
+    }
+    public int setX(int m){
+        x += m;
+        return x;
+    }
+    public int getAttack(){
+        return attack;
+    }
+    public int decreaseHealth(int attack){
+        health -= attack;
+        return health;
+    }
+    public int increaseHealth(){
+        health = 100;
+        return health;
+    }
+    public int getHealth(){
+        return health;
+    }
+    public int upgrade(){
+        attack = attack + (int)(Math.random() * 30);
+        return attack;
+    }
+    public boolean metFarmer(boolean x){
+        farmer = x;
+        return x;
+    }
+    public boolean getFarmer(){
+        return farmer;
+    }
+}
+
+public class Weapon{
+    private int x;
+    private int y;
+    private String name;
+    private int min;
+    private int max;
+    public Weapon(String name, int min, int max){
+        x = (int)(Math.random() * 10);
+        y = (int)(Math.random() * 10);
+        this.name = name;
+        this.min = min;
+        this.max = max;
+    }
+    public int getX(){
+        return x;
+    }
+    public int getY(){
+        return y;
+    }
+}
